@@ -1,0 +1,191 @@
+DATASET ANALYSIS REPORT
+CATA-Net Thesis — Compression-Robust Card Recognition
+Author: B. M. S. Islam  |  Advisor: Prof. Heejune Ahn  |  SeoulTech
+Generated: 2026-11-19 09:13
+
+========================================================================
+  SECTION 1 — CARD CLASSIFICATION DATASET  (card_datset)
+========================================================================
+
+Purpose : Train the per-frame card classifier (MobileNet backbone).
+Location: dataset/image_data/card_datset/
+
+  [TRAIN]
+    Classes  : 52
+    Images   : 23,786
+    Min/class: 73  (5_s)
+    Max/class: 890  (2_d)
+    Mean/class: 457.4
+
+    Image origin breakdown:
+      Original (real crops)  :  1,017  (4.3%)
+      aug_N_ (augmented)     :  1,184  (5.0%)
+      topup_N_ (extra-aug)   : 21,511  (90.4%)
+      low_ (low-quality)     :     55  (0.2%)
+
+  [VALID]
+    Classes  : 52
+    Images   : 7,211
+    Min/class: 132  (10_s)
+    Max/class: 152  (k_c)
+    Mean/class: 138.7
+
+    Image origin breakdown:
+      Original (real crops)  :    584  (8.1%)
+      aug_N_ (augmented)     :    600  (8.3%)
+      topup_N_ (extra-aug)   :  6,011  (83.4%)
+      low_ (low-quality)     :     15  (0.2%)
+
+  NOTE: Classes are named {rank}_{suit}.
+        rank  : 2 3 4 5 6 7 8 9 10 a j q k  (13 ranks)
+        suit  : c (clubs) d (diamonds) h (hearts) s (spades)  (4 suits)
+        Total : 13 × 4 = 52 classes  — card-back class NOT present.
+        Image size: variable, approximately 62–86 px wide × 74–106 px tall.
+
+  IMPORTANT — Data quality concern:
+    Most classes have only 3–15 real (non-augmented) crops.
+    The vast majority of images are topup_/aug_ copies of those few originals.
+    A naive random split is therefore LEAKY — augmented copies of the same
+    original appear in both train and valid, inflating reported accuracy.
+    For CATA-Net we will rebuild the dataset from raw video tracks to avoid this.
+
+  PER-CLASS COUNTS — TRAIN (sorted by total)
+  ----------------------------------------------
+  Class      Total   Orig    Aug   Topup   Low
+  ----------------------------------------------
+  5_s           73      3     13      56     0
+  4_h          146      8     16     122     0
+  6_s          158      8     15     132     3
+  3_c          182      5     25     152     0
+  k_h          187     34     19     133     1
+  10_d         194     48     13     133     0
+  2_s          212      8     24     177     3
+  7_c          236      8     27     197     3
+  7_d          236      9     30     197     0
+  4_c          242      9     30     202     1
+  3_d          248     11     30     207     0
+  7_s          259     54     27     176     1
+  6_h          266      8     36     222     0
+  6_c          277     52     34     191     0
+  3_h          282     49     38     195     0
+  a_s          289     38     32     216     3
+  q_d          290     90     26     174     0
+  4_d          293     15     31     247     0
+  7_h          309     61     33     213     2
+  8_d          314    101     27     185     1
+  k_d          344     53     14     277     0
+  k_s          369      5     14     350     0
+  j_s          398     92     58     247     1
+  q_s          406      7     10     386     1
+  8_s          410      3     15     392     0
+  9_d          416      5     13     398     0
+  9_s          441      4     15     422     0
+  8_h          456      4     16     434     0
+  8_c          467      8     15     443     1
+  a_c          501      7     16     478     0
+  q_h          512      8     14     489     0
+  j_c          525      5     18     500     2
+  3_s          567      6     14     542     5
+  j_h          569      6     19     543     0
+  5_d          578      7     18     550     3
+  5_h          584      9     17     557     1
+  j_d          594      7     21     565     1
+  a_d          607      5     19     582     1
+  2_h          616     10     14     588     4
+  q_c          619      4     24     591     0
+  k_c          660      8     21     631     0
+  10_c         695      7     20     663     3
+  10_h         699      8     20     670     1
+  4_s          714      4     25     682     2
+  5_c          742     59     23     655     4
+  2_c          757      8     26     722     1
+  6_d          779     10     25     744     0
+  a_h          782      8     23     748     3
+  10_s         790      5     30     753     2
+  9_c          797      8     24     759     0
+  9_h          809      6     30     772     1
+  2_d          890     12     27     851     0
+
+========================================================================
+  SECTION 2 — YOLO DETECTION DATASET  (yolo_dataset)
+========================================================================
+
+Purpose : Train / evaluate YOLOv11n object detector (card, hand, chip).
+Location: dataset/image_data/yolo_dataset/
+Format  : YOLO (class cx cy w h, normalised), 1920×1080 frames.
+
+  Classes (by bounding-box count in train labels):
+    ID 0 — card   (foreground object of interest)
+    ID 1 — hand   (dealer / player hand)
+    ID 2 — chip   (betting chips, most frequent)
+
+  [TRAIN]
+    Images : 1,263
+    Labels : 1,263
+    Boxes  class 0 (card): 4,613
+    Boxes  class 1 (hand): 4,412
+    Boxes  class 2 (chip): 29,922
+
+  [VALID]
+    Images : 222
+    Labels : 222
+    Boxes  class 0 (card): 790
+    Boxes  class 1 (hand): 769
+    Boxes  class 2 (chip): 4,824
+
+========================================================================
+  SECTION 3 — VIDEO FILES
+========================================================================
+
+  All videos: H.264, 1920×1080.
+  'has_bframes' — whether B-frames appear in the stream.
+  B-frames matter for CATA-Net: they create bidirectional temporal redundancy.
+
+  File                          Dur(s)    FPS  Frames  B-fr      I      P      B
+  ------------------------------------------------------------------------------
+  dataset/bacarat_video.mp4              237.9  30.03   7,144    no    239  6,905      0
+  live_test_video/bacarat.mp4            400.4  29.91  11,976   YES    400  3,993  7,583
+  live_test_video/chip.mp4               330.0  30.00   9,899    no     40  9,859      0
+  live_test_video/chip2.mp4              186.0  30.00   5,582    no    187  5,395      0
+  live_test_video/play.mp4               379.2  30.00  11,375    no    380 10,995      0
+
+  KEY OBSERVATIONS:
+  1. bacarat_video.mp4 (main dataset video): NO B-frames (I+P only).
+     GOP ~30 frames.  Duration: ~4 min.
+  2. live_test_video/bacarat.mp4: HAS B-frames (I+P+B structure).
+     This is the most relevant video for CATA-Net experiments.
+     Duration: ~6.7 min.
+  3. live_test_video/chip.mp4: very few I-frames (40 in 330 s = ~1 per 8 s).
+     Extreme long-GOP — card crops here would be heavily P-frame dominated.
+  4. Total baccarat gameplay video available: ~11 minutes combined.
+     Thesis plan target is ~5–6 hours for a full track dataset.
+     Additional footage from GKL/ITICO is required.
+
+========================================================================
+  SECTION 4 — GAPS vs THESIS PLAN
+========================================================================
+
+  [ !! ] Card back class (53rd class)
+         → MISSING — only 52 classes present in image data
+
+  [ !! ] Test split
+         → MISSING — only train + valid splits exist
+
+  [ !! ] gkl_mask1.avi
+         → NOT FOUND — closest is bacarat_video.mp4 (4 min)
+
+  [ !! ] yolo11n_cards.pt weights
+         → NOT FOUND in source_code/
+
+  [ OK ] Multiple sessions for split
+         → Only 1 main video — session-level split not yet possible
+
+  [ OK ] ~5-6 h of gameplay video
+         → Only ~11 min available; GKL/ITICO data request needed
+
+  [ !! ] frame-type metadata in crops
+         → MISSING — existing crops cannot be used for CATA-Net training
+
+========================================================================
+END OF REPORT
+========================================================================
