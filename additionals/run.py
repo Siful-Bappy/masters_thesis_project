@@ -16,12 +16,17 @@ Step 4 — Generate demo overlay video:
 python src/demo_overlay.py --video dataset/bacarat_video.mp4
 # → saves dataset_report/demo_bacarat_video.mp4
 
+# Step 3: start training all 6 CRF models
+python src/train_all_crfs.py
 
+If you want to train just one specific CRF (e.g. only CRF 43):
+python src/train_classifier.py --crf 43
 
+After all training finishes, run the evaluation:
+python src/eval_crf.py
 
-
-
-
+This will show you the accuracy vs CRF table and save the plot to 
+dataset_report/accuracy_vs_crf.png
 
 
 

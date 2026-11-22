@@ -12,7 +12,7 @@ Run:
     python src/eval_crf.py
 """
 
-import json
+import csv
 import sys
 from pathlib import Path
 
@@ -20,10 +20,13 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    HAS_MPL = True
+except ImportError:
+    HAS_MPL = False
 
 ROOT      = Path(__file__).parent.parent
 IMG_DATA  = ROOT / "dataset" / "image_data"
@@ -151,27 +154,34 @@ def main():
         })
 
     # ── save CSV ──────────────────────────────────────────────────────────
-    df = pd.DataFrame(rows)
     csv_path = RESULTS_DIR / "accuracy_vs_crf.csv"
-    df.to_csv(csv_path, index=False)
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["crf", "label", "top1_acc", "top5_acc"])
+        writer.writeheader()
+        writer.writerows(rows)
     print(f"\nResults saved → {csv_path}")
 
     # ── plot ──────────────────────────────────────────────────────────────
-    df_plot = df.dropna(subset=["top1_acc"])
-    if len(df_plot) < 2:
-        print("Not enough data to plot. Run compress_crops.py first.")
+    df_plot = [r for r in rows if r["top1_acc"] is not None]
+    if len(df_plot) < 2 or not HAS_MPL:
+        if not HAS_MPL:
+            print("matplotlib not installed — skipping plot (pip install matplotlib)")
+        else:
+            print("Not enough data to plot. Run compress_crops.py first.")
         return
 
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.plot(df_plot["crf"], df_plot["top1_acc"],
-            "o-", color="#1565C0", linewidth=2, markersize=7, label="Top-1 Accuracy")
-    ax.plot(df_plot["crf"], df_plot["top5_acc"],
-            "s--", color="#42A5F5", linewidth=1.5, markersize=6, label="Top-5 Accuracy")
+    crfs   = [r["crf"]      for r in df_plot]
+    top1s  = [r["top1_acc"] for r in df_plot]
+    top5s  = [r["top5_acc"] for r in df_plot]
 
-    # annotate each point
-    for _, row in df_plot.iterrows():
-        ax.annotate(f"{row['top1_acc']:.1f}%",
-                    xy=(row["crf"], row["top1_acc"]),
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot(crfs, top1s, "o-", color="#1565C0", linewidth=2,
+            markersize=7, label="Top-1 Accuracy")
+    ax.plot(crfs, top5s, "s--", color="#42A5F5", linewidth=1.5,
+            markersize=6, label="Top-5 Accuracy")
+
+    for crf, t1 in zip(crfs, top1s):
+        ax.annotate(f"{t1:.1f}%", xy=(crf, t1),
                     xytext=(0, 10), textcoords="offset points",
                     ha="center", fontsize=9, color="#1565C0")
 
@@ -181,8 +191,8 @@ def main():
     ax.set_title("MobileNetV1-1.25 Card Classification Accuracy vs H.264 CRF\n"
                  "(52 classes, trained on uncompressed crops, evaluated at each CRF)",
                  fontsize=11)
-    ax.set_xticks(df_plot["crf"].tolist())
-    ax.set_xticklabels(["0\n(ref)"] + [str(c) for c in df_plot["crf"].tolist()[1:]])
+    ax.set_xticks(crfs)
+    ax.set_xticklabels(["0\n(ref)"] + [str(c) for c in crfs[1:]])
     ax.set_ylim(0, 105)
     ax.grid(axis="y", alpha=0.3)
     ax.legend(fontsize=10)
@@ -197,7 +207,7 @@ def main():
     print(f"\n{'='*45}")
     print(f"{'CRF':<12} {'Top-1 Acc':>10}  {'Top-5 Acc':>10}")
     print("-" * 45)
-    for _, row in df.iterrows():
+    for row in rows:
         t1 = f"{row['top1_acc']:.2f}%" if row["top1_acc"] is not None else "N/A"
         t5 = f"{row['top5_acc']:.2f}%" if row["top5_acc"] is not None else "N/A"
         print(f"  {row['label']:<14} {t1:>10}  {t5:>10}")

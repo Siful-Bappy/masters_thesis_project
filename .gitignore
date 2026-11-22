@@ -3,6 +3,9 @@
 # B. M. S. Islam  |  SeoulTech Masters Thesis
 # ──────────────────────────────────────────────────────────────────────────────
 
+# ── Claude Code AI assistant config (local only) ──────────────────────────────
+.claude/
+
 # ── Raw video files (too large for git, regenerate from source) ───────────────
 dataset/bacarat_video.mp4
 dataset/live_test_video/
@@ -23,17 +26,19 @@ models/*.pt
 models/*.pth
 models/*.engine
 models/*.onnx
-# keep the training history CSV (small, useful to track)
+# keep all training history CSVs (small, useful to track progress)
 !models/classifier_history.csv
+!models/history_*.csv
 
 # ── Ultralytics training artifacts ────────────────────────────────────────────
 runs/
 
-# ── Ultralytics auto-downloaded pretrained weights (root level) ───────────────
+# ── Ultralytics / YOLO auto-downloaded pretrained weights ─────────────────────
 yolo11n.pt
 yolo11n.yaml
 *.pt
 !models/classifier_history.csv
+!models/history_*.csv
 
 # ── Large generated demo video ────────────────────────────────────────────────
 dataset_report/demo_*.mp4
@@ -71,17 +76,18 @@ tmp/
 # ──────────────────────────────────────────────────────────────────────────────
 # WHAT IS TRACKED  (everything not listed above)
 # ──────────────────────────────────────────────────────────────────────────────
-# src/                   all Python source code
-# data/*.yaml            YOLO dataset config
-# data/*.json            class name mappings
+# src/                        all Python source code
+# data/*.yaml                 YOLO dataset config
+# data/*.json                 class name mappings
 # data/video_inventory.csv
-# data/tracks.csv        card track labels (output of track.py)
-# data/detections.csv    per-frame detections
-# results/               experiment result CSVs + plots
-# dataset_report/*.png   data analysis figures (small)
-# dataset_report/*.txt   text summary report
+# data/tracks.csv             card track labels (output of track.py)
+# data/detections.csv         per-frame detections
+# results/                    experiment result CSVs + plots
+# dataset_report/*.png        data analysis figures (small)
+# dataset_report/*.txt        text summary report
 # models/classifier_history.csv
-# additionals/           any extra scripts
+# models/history_*.csv        per-CRF training history CSVs
+# additionals/                any extra scripts
 # data_analysis.py
 # .gitignore
 # README.md
